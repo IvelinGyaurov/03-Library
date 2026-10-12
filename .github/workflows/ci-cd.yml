@@ -25,7 +25,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
 
       - name: Start REST server
         run: npm run server > server.log 2>&1 &
