@@ -1,0 +1,51 @@
+
+name: Library Catalog CI/CD
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start REST server
+        run: npm run server > server.log 2>&1 &
+
+      - name: Start web application
+        run: npm run start > frontend.log 2>&1 &
+
+      - name: Wait for servers
+        run: |
+          for i in {1..30}; do
+            if curl -sS http://localhost:3000 -o /dev/null &&
+               curl -sS http://localhost:3030 -o /dev/null; then
+              echo "Both servers are responding."
+              exit 0
+            fi
+            sleep 1
+          done
+          cat server.log
+          cat frontend.log
+          exit 1
+
+      - name: Run Playwright tests
+        run: npm test
